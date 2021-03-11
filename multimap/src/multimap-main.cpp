@@ -3,6 +3,16 @@
 #include <map>
 #include <iterator>
 
+/* This is just a short example that highlights the usage of multimap
+   - iterate throuhg all the elements even the same key is present multiple times with different value
+   - adding element randomly preserve they key ordering
+   - remove element by value
+   - remove all elements by key
+   - use equal range to iterate through all elements with the same key
+   TODO:
+      using emplace/emplace_with_hint, measure performance
+   */
+   
 using namespace std;
 
 int main()
