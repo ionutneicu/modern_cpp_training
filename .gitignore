@@ -1,2 +1,4 @@
 eclipse-ws
-*/build
+*build
+*.cproject
+*.project
