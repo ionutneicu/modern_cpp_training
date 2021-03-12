@@ -1,5 +1,6 @@
 #include <iostream>
 #include <future>
+#include <vector>
 
 thread_local int x = -1;
 
@@ -16,13 +17,15 @@ int my_function( int i )
 
 int main()
 {
-	constexpr size_t NUM_FUTURES=1000;
-	std::future<int> async_futures[NUM_FUTURES];
+	constexpr size_t NUM_FUTURES=10;
+	std::vector< std::future<int> > async_futures(NUM_FUTURES);
 	for( int i = 0; i < NUM_FUTURES; ++i )
 	{
-		//async_futures[i] = std::async( std::launch::deferred , my_function, i );
-		//async_futures[i] = std::async( std::launch::async , my_function, i );
-		async_futures[i] = std::async(  my_function, i );
+		if( i < NUM_FUTURES/2 )
+			async_futures[i] =std::async( std::launch::deferred , my_function, i );
+		else
+			async_futures[i] = std::async( std::launch::async , my_function, i );
+		//async_futures[i] = std::async(  my_function, i );
 	}
 
 	for( int i = 0; i < NUM_FUTURES; ++ i )
