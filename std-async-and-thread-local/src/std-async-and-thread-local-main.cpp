@@ -2,6 +2,21 @@
 #include <future>
 #include <vector>
 
+
+/* Copyright 2020-2021 Ionut Neicu
+ * See License.txt for copyright and disclaimer 
+ *
+ * This program demonstrates the possible inconsistency 
+ * when using thread_local with async.
+ * This because async with default launc policy won't guarantee the
+ * creation of a separate thread.
+ * This can be tuned by using explicit launch policy as in this example
+ * first 5 async tasks are deffered so won't execute in the separate thread,
+ * the next 5 will execute in a separate thread.
+ * Not passing launch policy will let system choose whether to start new thread
+ * or defer the task into main thread producing inconsistent results
+ * if thrad_local variable are involved*/
+
 thread_local int x = -1;
 
 
