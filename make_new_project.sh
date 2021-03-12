@@ -23,6 +23,10 @@ sed -i "s/my_project/${PROJECT}/g" src/project-boilerplate.cpp
 
 mv src/project-boilerplate.cpp "src/${PROJECT}-main.cpp"
 
+cd ..
+
+echo "add_subdirectory(${PROJECT})" >> CMakeLists.txt
+
 mkdir build
 cd build
 
