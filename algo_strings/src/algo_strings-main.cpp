@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include <set>
 #include <list>
+#include <queue>
 #include <algorithm>
 #include <optional>  // needs C++ 17, see CMakefile
 
@@ -154,6 +155,10 @@ T middle_element( const std::list<T>& strlist )
 
 	size_t middle_position = 0;
 	size_t processed = 0;
+
+	// assuming there is a "true" linked list, we cannot use size
+	// otherwise it would be something like
+	// std::advance( middle_iter,  strlist.size() / 2 )
 	for( ; current_iter != strlist.end(); ++ current_iter )
 	{
 		++ processed;
@@ -167,10 +172,143 @@ T middle_element( const std::list<T>& strlist )
 
 }
 
+/* Optimal check palindrome with minimum iterations
+ * It could be implemented with random access [] operator on vector and string
+ * Or like below with reversible iterators on vector, string, doubly-linked lists
+ */
+bool check_string_palindrome( const std::string& candidate )
+{
+	std::string::const_iterator fwd_iter = candidate.cbegin();
+	std::string::const_iterator backward_iter = candidate.cend();
+
+	while( fwd_iter != candidate.cend() )
+	{
+		std::advance( backward_iter, -1 );
+
+		if( backward_iter == candidate.end()  )
+			return false;
+
+		if( backward_iter == fwd_iter )
+			break;
+		//std::cout << "fwd = " << *fwd_iter << " bwd = " << *backward_iter << std::endl;
+		if( *fwd_iter != * backward_iter )
+			return false;
+
+		std::advance( fwd_iter, 1 );
+	}
+	return true;
+}
+
+
+/*
+ * get the maximum sequence of 2 characters
+ */
+
+
+bool queue_add( std::list<char>& aqueue, const char chr )
+{
+	std::list<char>::const_iterator found = aqueue.end();
+
+	for( std::list<char>::const_iterator q = aqueue.begin(); q != aqueue.end(); ++ q )
+	{
+		if( *q == chr )
+			found = q;
+	}
+
+	// make sure it gets the last
+	// remove it
+	if( found != aqueue.end() )
+	{
+		aqueue.erase(found);
+		aqueue.push_back( chr );
+		return false;
+	}
+	// append it:
+	aqueue.push_back( chr );
+	while( aqueue.size() > 2 )
+	{
+		aqueue.pop_front();
+	}
+	return true;
+}
+
+/*
+ * Gets the longest substring made of 2 chars in a given string
+ * It keeps 2 pointers( iterators ) in the string, pointing to:
+ * (1.) where the last repeating 2 char sequence started
+ * (2.) where the last repeating 1 char sequence started
+ *
+ * It keeps a list of maximum 2 chars containing the last 2 distinct chars
+ * The list is ordered, so last encountered char is always last
+ *
+ * If new char that is not in the list, this is checked by queue_add() :
+ *   - the list is updated so the first char is removed, new char added at the end
+ *   - the size of last repeating seq is std::distance( (1), (2) )
+ *     it higher that the maximum known, is kept
+ *   - the the pointer(1) is updated with pointer(2)
+ *   - the pointer (2) is updated with the position of the new char
+ * If  char is in the 2 char list, but not last, it is moved at the end of the list by queue_add()
+ * At the end of the string, additional check is made to detect the longest sequence
+ *
+ * Known issue ( std::distance() has performance penalty so it must be avoided.
+ * External counter to be added instead of std::distance(), i.e. how many chars have
+ * added since last queue change )
+  */
+
+std::size_t get_max_seq_of_two_chars( const std::string& str )
+{
+	std::list<char> last_2_chars; // must stay at maximum 2 chars
+	std::string::const_iterator begin_of_last_2_chars  = str.begin();
+	std::string::const_iterator begin_of_last_char 	   = str.begin();
+	std::string::const_iterator current = str.begin();
+	std::size_t max_seq = 0;
+	char last_char = *begin_of_last_char;
+	while( current != str.end() )
+	{
+		//std::cout << "******" << std::endl;
+		//std::cout << "current = " << *current << std::endl;
+		if( last_char != *current )
+		{
+				//std::cout << "last char = " << last_char << std::endl;
+
+				// already a sequence of 2 chars
+				int prev_size = last_2_chars.size();
+				if(  queue_add( last_2_chars, *current ) )
+				{
+					if( prev_size == 2 )
+					{
+						/* std::distance to be optimized away*/
+						std::size_t distance = std::distance(begin_of_last_2_chars, current);
+						//std::cout << "last 2 chars changed length of seq was: " << distance << " " << std::string( begin_of_last_2_chars, current) << std::endl;
+						if( distance > max_seq )
+							max_seq = distance;
+
+						begin_of_last_2_chars = begin_of_last_char;
+					}
+				}
+
+			begin_of_last_char = current;
+			last_char = *current;
+		}
+
+		++ current;
+
+		if( current == str.end() )
+		{
+			std::size_t distance = std::distance(begin_of_last_2_chars, current);
+			//std::cout << "last 2 chars changed length of seq was: " << distance << " " << std::string( begin_of_last_2_chars, current) << std::endl;
+			if( distance > max_seq )
+				max_seq = distance;
+		}
+	}
+	return max_seq;
+}
+
 int main()
 {
 	print_duplicates("aaabcddeffgag" );
 	std::cout << "--------------------------------------------" << std::endl;
+
 	std::string s1 = "abc";
 	std::string s2 = "cba";
 	std::string s3 = "aca";
@@ -179,6 +317,7 @@ int main()
 	std::cout << s3 << " is anagram of " << s1 << " = " << is_anagram( s1, s3 ) << std::endl;
 	std::cout << s4 << " is anagram of " << s1 << " = " << is_anagram( s1, s4 ) << std::endl;
 	std::cout << "--------------------------------------------" << std::endl;
+
 	std::string schar = "ababcddsefc";
 	std::optional<char> optional_value = find_first_non_repeating_char( schar );
 	if( optional_value.has_value() )
@@ -192,10 +331,25 @@ int main()
 	std::cout << "--------------------------------------------" << std::endl;
 	std::cout << "reverse string "<< schar << " recursive " << reverse_string_recursive( schar ) << std::endl;
 	std::cout << "--------------------------------------------" << std::endl;
+
 	std::list<char> char_list;
 	std::string strorder = "abcdefghijk";
 	std::copy( strorder.begin(), strorder.end(), std::back_inserter( char_list ));
 	std::cout << "middle element of " << strorder << " is: " << middle_element( char_list ) << std::endl;
+	std::cout << "--------------------------------------------" << std::endl;
+
+	std::string palindrome = "abcdcba";
+	std::string non_palindrome = "abcdaba";
+	std::cout << "check string palindrome " << palindrome << " : " << check_string_palindrome( palindrome ) << std::endl;
+	std::cout << "check string palindrome " << non_palindrome << " : " << check_string_palindrome( non_palindrome ) << std::endl;
+	std::cout << "--------------------------------------------" << std::endl;
+
+	std::string seq_string = "ababcdeedecab";
+	std::cout << "max seq of 2 chars of " << seq_string << " = " << get_max_seq_of_two_chars( seq_string ) << std::endl;
+	std::string seq_string2 = "ababcdeedecabzzwzww";
+	std::cout << "max seq of 2 chars of " << seq_string2 << " = " << get_max_seq_of_two_chars( seq_string2 ) << std::endl;
+	std::string seq_string3 = "zzwzwwababcdeedecab";
+	std::cout << "max seq of 2 chars of " << seq_string3 << " = " << get_max_seq_of_two_chars( seq_string3 ) << std::endl;
 	std::cout << "--------------------------------------------" << std::endl;
 	return 0;
 }
