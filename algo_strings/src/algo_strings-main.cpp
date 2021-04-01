@@ -128,7 +128,7 @@ std::optional<char> find_first_non_repeating_char( const std::string& str )
 
 	if( ! ordered_appeared_once.empty() )
 	{
-		ret_val =  *( ordered_appeared_once.begin() );
+		ret_val = *( ordered_appeared_once.begin() );
 	}
 
 	return ret_val;
@@ -143,6 +143,28 @@ std::string reverse_string_recursive( const std::string& str )
 	}
 	else
 		return str;
+}
+
+// find middle element of a linked list in one iteration
+template<class T>
+T middle_element( const std::list<T>& strlist )
+{
+	typename std::list<T>::const_iterator current_iter = strlist.cbegin();
+	typename std::list<T>::const_iterator middle_iter = strlist.cbegin();
+
+	size_t middle_position = 0;
+	size_t processed = 0;
+	for( ; current_iter != strlist.end(); ++ current_iter )
+	{
+		++ processed;
+		while( middle_position < processed / 2  )
+		{
+			++ middle_position;
+			++ middle_iter;
+		}
+	}
+	return *middle_iter;
+
 }
 
 int main()
@@ -169,6 +191,11 @@ int main()
 	}
 	std::cout << "--------------------------------------------" << std::endl;
 	std::cout << "reverse string "<< schar << " recursive " << reverse_string_recursive( schar ) << std::endl;
+	std::cout << "--------------------------------------------" << std::endl;
+	std::list<char> char_list;
+	std::string strorder = "abcdefghijk";
+	std::copy( strorder.begin(), strorder.end(), std::back_inserter( char_list ));
+	std::cout << "middle element of " << strorder << " is: " << middle_element( char_list ) << std::endl;
 	std::cout << "--------------------------------------------" << std::endl;
 	return 0;
 }
